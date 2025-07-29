@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBD Errors Bot</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px 20px;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .error-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 16px;
+            font-family: 'Courier New', monospace;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        .error-input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .error-input::placeholder {
+            color: #999;
+            font-size: 14px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .examples {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+
+        .examples h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .example-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #e1e5e9;
+            cursor: pointer;
+        }
+
+        .example-item:last-child {
+            border-bottom: none;
+        }
+
+        .example-item:hover {
+            background: #e9ecef;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 0 -10px;
+        }
+
+        .example-code {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: #667eea;
+            font-size: 14px;
+        }
+
+        .example-desc {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+        }
+
+        .result h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .result-content {
+            color: #666;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .error-message {
+            display: none;
+            padding: 15px;
+            background: #fee;
+            border: 1px solid #fcc;
+            border-radius: 8px;
+            color: #c33;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .success-message {
+            display: none;
+            padding: 15px;
+            background: #efe;
+            border: 1px solid #cfc;
+            border-radius: 8px;
+            color: #3c3;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .footer {
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+            border-top: 1px solid #e1e5e9;
+        }
+
+        .status {
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .status.connected {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                border-radius: 15px;
+            }
+            
+            .header {
+                padding: 25px 15px;
+            }
+            
+            .content {
+                padding: 25px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚗 OBD Errors Bot</h1>
+            <p>Расшифровка кодов ошибок автомобилей</p>
+        </div>
+
+        <div class="content">
+            <div id="status" class="status disconnected">
+                🔴 Проверка подключения к Telegram...
+            </div>
+
+            <div class="input-group">
+                <label for="errorCode">Код ошибки:</label>
+                <input 
+                    type="text" 
+                    id="errorCode" 
+                    class="error-input" 
+                    placeholder="Например: P0301"
+                    maxlength="10"
+                >
+            </div>
+
+            <button class="btn btn-primary" onclick="sendErrorCode()">
+                🔍 Расшифровать ошибку
+            </button>
+
+            <button class="btn btn-secondary" onclick="showExamples()">
+                📋 Примеры кодов
+            </button>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Обрабатываю код ошибки...</p>
+            </div>
+
+            <div class="result" id="result">
+                <h3>📊 Результат расшифровки</h3>
+                <div class="result-content" id="resultContent"></div>
+            </div>
+
+            <div class="error-message" id="errorMessage"></div>
+            <div class="success-message" id="successMessage"></div>
+
+            <div class="examples" id="examples" style="display: none;">
+                <h3>📋 Примеры кодов ошибок</h3>
+                <div class="example-item" onclick="setErrorCode('P0301')">
+                    <span class="example-code">P0301</span>
+                    <span class="example-desc">Пропуск зажигания в цилиндре 1</span>
+                </div>
+                <div class="example-item" onclick="setErrorCode('P0171')">
+                    <span class="example-code">P0171</span>
+                    <span class="example-desc">Слишком бедная смесь</span>
+                </div>
+                <div class="example-item" onclick="setErrorCode('C1234')">
+                    <span class="example-code">C1234</span>
+                    <span class="example-desc">Ошибка ABS</span>
+                </div>
+                <div class="example-item" onclick="setErrorCode('U0100')">
+                    <span class="example-code">U0100</span>
+                    <span class="example-desc">Потеря связи с модулем</span>
+                </div>
+                <div class="example-item" onclick="setErrorCode('B1234')">
+                    <span class="example-code">B1234</span>
+                    <span class="example-desc">Ошибка кузова</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Powered by OpenRouter AI • DeepSeek Chat v3</p>
+        </div>
+    </div>
+
+    <script>
+        // Инициализация Telegram WebApp
+        let tg = window.Telegram.WebApp;
+        let isConnected = false;
+
+        // Проверка подключения к Telegram
+        function checkConnection() {
+            try {
+                if (tg && tg.initData) {
+                    isConnected = true;
+                    document.getElementById('status').className = 'status connected';
+                    document.getElementById('status').innerHTML = '🟢 Подключено к Telegram';
+                    tg.expand();
+                    tg.ready();
+                } else {
+                    isConnected = false;
+                    document.getElementById('status').className = 'status disconnected';
+                    document.getElementById('status').innerHTML = '🔴 Не подключено к Telegram (тестовый режим)';
+                }
+            } catch (error) {
+                console.log('Telegram WebApp не доступен:', error);
+                isConnected = false;
+                document.getElementById('status').className = 'status disconnected';
+                document.getElementById('status').innerHTML = '🔴 Не подключено к Telegram (тестовый режим)';
+            }
+        }
+
+        // Основные элементы
+        const errorInput = document.getElementById('errorCode');
+        const loading = document.getElementById('loading');
+        const result = document.getElementById('result');
+        const resultContent = document.getElementById('resultContent');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+        const examples = document.getElementById('examples');
+
+        // Функция отправки кода ошибки
+        async function sendErrorCode() {
+            const code = errorInput.value.trim().toUpperCase();
+            
+            if (!code) {
+                showError('Пожалуйста, введите код ошибки');
+                return;
+            }
+
+            if (!isValidErrorCode(code)) {
+                showError('Неверный формат кода. Используйте формат: P0301, C1234, U0100');
+                return;
+            }
+
+            // Показываем загрузку
+            hideMessages();
+            showLoading();
+            hideResult();
+
+            try {
+                if (isConnected && tg) {
+                    // Отправляем сообщение в Telegram
+                    tg.sendData(JSON.stringify({
+                        action: 'decode_error',
+                        code: code
+                    }));
+                    showSuccess('Код ошибки отправлен в чат!');
+                } else {
+                    // Тестовый режим - показываем заглушку
+                    setTimeout(() => {
+                        showResult(`🚗 **Код ошибки:** \`${code}\`
+
+**Описание:** Это тестовый режим. В реальном боте здесь будет подробное описание ошибки через OpenRouter AI.
+
+**Пример ответа для ${code}:**
+• **Что означает:** Ошибка диагностики автомобиля
+• **Возможные причины:** Проблемы с датчиками, проводкой, модулями
+• **Рекомендации:** Обратитесь к специалисту для диагностики
+• **Критичность:** Средняя
+
+---
+💡 *Это тестовый режим. В реальном боте ответ придет через Telegram*`);
+                        hideLoading();
+                    }, 2000);
+                }
+                
+                // Очищаем поле ввода
+                errorInput.value = '';
+                
+            } catch (error) {
+                hideLoading();
+                showError('Ошибка отправки: ' + error.message);
+            }
+        }
+
+        // Функция установки кода ошибки из примера
+        function setErrorCode(code) {
+            errorInput.value = code;
+            errorInput.focus();
+            examples.style.display = 'none';
+        }
+
+        // Функция показа примеров
+        function showExamples() {
+            if (examples.style.display === 'none') {
+                examples.style.display = 'block';
+                hideMessages();
+                hideResult();
+            } else {
+                examples.style.display = 'none';
+            }
+        }
+
+        // Валидация кода ошибки
+        function isValidErrorCode(code) {
+            // Проверяем формат: буква + 4 цифры
+            const pattern = /^[PBCU]\d{4}$/;
+            return pattern.test(code);
+        }
+
+        // Вспомогательные функции
+        function showLoading() {
+            loading.style.display = 'block';
+        }
+
+        function hideLoading() {
+            loading.style.display = 'none';
+        }
+
+        function showResult(content) {
+            resultContent.innerHTML = content;
+            result.style.display = 'block';
+        }
+
+        function hideResult() {
+            result.style.display = 'none';
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            hideLoading();
+            hideResult();
+        }
+
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            hideLoading();
+            hideResult();
+        }
+
+        function hideMessages() {
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+        }
+
+        // Обработка Enter в поле ввода
+        errorInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendErrorCode();
+            }
+        });
+
+        // Автоматическая капитализация при вводе
+        errorInput.addEventListener('input', function(e) {
+            this.value = this.value.toUpperCase();
+        });
+
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            checkConnection();
+            
+            // Настройка темы Telegram
+            if (tg && tg.colorScheme === 'dark') {
+                document.body.style.background = '#1a1a1a';
+                document.querySelector('.container').style.background = '#2a2a2a';
+                document.querySelector('.container').style.color = '#fff';
+            }
+        });
+    </script>
+</body>
+</html> 
