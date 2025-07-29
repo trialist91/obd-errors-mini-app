@@ -453,7 +453,36 @@
                 <div class="brand-selection" id="brandSelection">
                     <h4>Популярные марки:</h4>
                     <div class="brand-buttons" id="popularBrandButtons">
-                        <!-- Заполнится динамически -->
+                        <button class="brand-button" onclick="selectMark({id: '1', name: 'Audi', cyrillic_name: 'Ауди'})">Ауди</button>
+                        <button class="brand-button" onclick="selectMark({id: '2', name: 'BMW', cyrillic_name: 'БМВ'})">БМВ</button>
+                        <button class="brand-button" onclick="selectMark({id: '3', name: 'Chevrolet', cyrillic_name: 'Шевроле'})">Шевроле</button>
+                        <button class="brand-button" onclick="selectMark({id: '4', name: 'Citroen', cyrillic_name: 'Ситроен'})">Ситроен</button>
+                        <button class="brand-button" onclick="selectMark({id: '5', name: 'Daewoo', cyrillic_name: 'Дэу'})">Дэу</button>
+                        <button class="brand-button" onclick="selectMark({id: '6', name: 'Fiat', cyrillic_name: 'Фиат'})">Фиат</button>
+                        <button class="brand-button" onclick="selectMark({id: '7', name: 'Ford', cyrillic_name: 'Форд'})">Форд</button>
+                        <button class="brand-button" onclick="selectMark({id: '8', name: 'Honda', cyrillic_name: 'Хонда'})">Хонда</button>
+                        <button class="brand-button" onclick="selectMark({id: '9', name: 'Hyundai', cyrillic_name: 'Хендай'})">Хендай</button>
+                        <button class="brand-button" onclick="selectMark({id: '10', name: 'Kia', cyrillic_name: 'Киа'})">Киа</button>
+                        <button class="brand-button" onclick="selectMark({id: '11', name: 'Lada', cyrillic_name: 'Лада'})">Лада</button>
+                        <button class="brand-button" onclick="selectMark({id: '12', name: 'Mazda', cyrillic_name: 'Мазда'})">Мазда</button>
+                        <button class="brand-button" onclick="selectMark({id: '13', name: 'Mercedes-Benz', cyrillic_name: 'Мерседес'})">Мерседес</button>
+                        <button class="brand-button" onclick="selectMark({id: '14', name: 'Mitsubishi', cyrillic_name: 'Мицубиси'})">Мицубиси</button>
+                        <button class="brand-button" onclick="selectMark({id: '15', name: 'Nissan', cyrillic_name: 'Ниссан'})">Ниссан</button>
+                        <button class="brand-button" onclick="selectMark({id: '16', name: 'Opel', cyrillic_name: 'Опель'})">Опель</button>
+                        <button class="brand-button" onclick="selectMark({id: '17', name: 'Peugeot', cyrillic_name: 'Пежо'})">Пежо</button>
+                        <button class="brand-button" onclick="selectMark({id: '18', name: 'Renault', cyrillic_name: 'Рено'})">Рено</button>
+                        <button class="brand-button" onclick="selectMark({id: '19', name: 'Skoda', cyrillic_name: 'Шкода'})">Шкода</button>
+                        <button class="brand-button" onclick="selectMark({id: '20', name: 'Toyota', cyrillic_name: 'Тойота'})">Тойота</button>
+                        <button class="brand-button" onclick="selectMark({id: '21', name: 'Volkswagen', cyrillic_name: 'Фольксваген'})">Фольксваген</button>
+                        <button class="brand-button" onclick="selectMark({id: '22', name: 'Volvo', cyrillic_name: 'Вольво'})">Вольво</button>
+                        <button class="brand-button" onclick="selectMark({id: '23', name: 'Chery', cyrillic_name: 'Чери'})">Чери</button>
+                        <button class="brand-button" onclick="selectMark({id: '24', name: 'Geely', cyrillic_name: 'Джили'})">Джили</button>
+                        <button class="brand-button" onclick="selectMark({id: '25', name: 'Great Wall', cyrillic_name: 'Грейт Волл'})">Грейт Волл</button>
+                        <button class="brand-button" onclick="selectMark({id: '26', name: 'Haval', cyrillic_name: 'Хавейл'})">Хавейл</button>
+                        <button class="brand-button" onclick="selectMark({id: '27', name: 'Lifan', cyrillic_name: 'Лифан'})">Лифан</button>
+                        <button class="brand-button" onclick="selectMark({id: '28', name: 'UAZ', cyrillic_name: 'УАЗ'})">УАЗ</button>
+                        <button class="brand-button" onclick="selectMark({id: '29', name: 'GAZ', cyrillic_name: 'ГАЗ'})">ГАЗ</button>
+                        <button class="brand-button" onclick="selectMark({id: '30', name: 'ZAZ', cyrillic_name: 'ЗАЗ'})">ЗАЗ</button>
                     </div>
                     <div class="search-section">
                         <input type="text" class="search-input" placeholder="Поиск марки..." id="brandSearch">
@@ -679,22 +708,8 @@
 
         // Загрузка данных
         async function loadMarks() {
-            const popularMarks = await fetchPopularMarks();
-            const allMarks = await fetchAllMarks();
-            
-            // Заполняем кнопки популярных марок
-            const popularBrandButtons = document.getElementById('popularBrandButtons');
-            popularBrandButtons.innerHTML = '';
-            popularMarks.forEach(mark => {
-                const button = document.createElement('button');
-                button.className = 'brand-button';
-                button.textContent = mark.cyrillic_name || mark.name;
-                button.onclick = () => selectMark(mark);
-                popularBrandButtons.appendChild(button);
-            });
-            
-            // Настраиваем поиск
-            setupBrandSearch(allMarks);
+            // Популярные марки уже в HTML, настраиваем только поиск
+            setupBrandSearch();
         }
 
         async function loadModels() {
@@ -708,16 +723,24 @@
         }
 
         // Настройка поиска марок
-        function setupBrandSearch(marks) {
+        async function setupBrandSearch() {
             const brandSearch = document.getElementById('brandSearch');
             
-            brandSearch.oninput = () => {
-                const query = brandSearch.value.toLowerCase();
-                const filtered = marks.filter(mark => 
-                    mark.name.toLowerCase().includes(query) || 
-                    (mark.cyrillic_name && mark.cyrillic_name.toLowerCase().includes(query))
-                );
-                showBrandResults(filtered);
+            brandSearch.oninput = async () => {
+                const query = brandSearch.value.trim();
+                if (query.length < 2) {
+                    showBrandResults([]);
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/marks/search?q=${encodeURIComponent(query)}`);
+                    const marks = await response.json();
+                    showBrandResults(marks);
+                } catch (error) {
+                    console.error('Ошибка поиска марок:', error);
+                    showBrandResults([]);
+                }
             };
         }
 
