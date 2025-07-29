@@ -635,9 +635,11 @@
         }
 
         // API функции
+        const API_BASE_URL = 'http://95.183.9.242:5000';
+        
         async function fetchPopularMarks() {
             try {
-                const response = await fetch('/api/marks/popular');
+                const response = await fetch(`${API_BASE_URL}/api/marks/popular`);
                 return await response.json();
             } catch (error) {
                 console.error('Ошибка получения популярных марок:', error);
@@ -647,7 +649,7 @@
 
         async function fetchAllMarks() {
             try {
-                const response = await fetch('/api/marks');
+                const response = await fetch(`${API_BASE_URL}/api/marks`);
                 return await response.json();
             } catch (error) {
                 console.error('Ошибка получения всех марок:', error);
@@ -657,7 +659,7 @@
 
         async function fetchModels(markId) {
             try {
-                const response = await fetch(`/api/models/${markId}`);
+                const response = await fetch(`${API_BASE_URL}/api/models/${markId}`);
                 return await response.json();
             } catch (error) {
                 console.error('Ошибка получения моделей:', error);
@@ -667,7 +669,7 @@
 
         async function fetchGenerations(modelId) {
             try {
-                const response = await fetch(`/api/generations/${modelId}`);
+                const response = await fetch(`${API_BASE_URL}/api/generations/${modelId}`);
                 return await response.json();
             } catch (error) {
                 console.error('Ошибка получения поколений:', error);
