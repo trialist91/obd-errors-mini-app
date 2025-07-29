@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OBD Errors Bot</title>
+    <title>OBD Errors Decoder</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * {
@@ -14,823 +14,852 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
             padding: 20px;
+            min-height: 100vh;
         }
 
         .container {
-            max-width: 400px;
+            max-width: 600px;
             margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            overflow: hidden;
         }
 
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px 20px;
             text-align: center;
+            margin-bottom: 30px;
         }
 
         .header h1 {
             font-size: 24px;
             margin-bottom: 10px;
-            font-weight: 600;
+            color: var(--tg-theme-text-color, #000000);
         }
 
         .header p {
+            color: var(--tg-theme-hint-color, #999999);
             font-size: 14px;
-            opacity: 0.9;
-        }
-
-        .content {
-            padding: 30px 20px;
         }
 
         .step-indicator {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 25px;
-            padding: 0 10px;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .step-indicator::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--tg-theme-hint-color, #e0e0e0);
+            z-index: 1;
         }
 
         .step {
+            position: relative;
+            z-index: 2;
+            background: var(--tg-theme-bg-color, #ffffff);
             width: 30px;
             height: 30px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 14px;
+            font-size: 12px;
             font-weight: bold;
-            color: white;
-            background: #e1e5e9;
-            transition: all 0.3s ease;
+            border: 2px solid var(--tg-theme-hint-color, #e0e0e0);
+            color: var(--tg-theme-hint-color, #999999);
         }
 
         .step.active {
-            background: #667eea;
+            background: var(--tg-theme-button-color, #2481cc);
+            border-color: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
         }
 
         .step.completed {
-            background: #28a745;
-        }
-
-        .step-line {
-            flex: 1;
-            height: 2px;
-            background: #e1e5e9;
-            margin: 15px 10px 0;
-            transition: all 0.3s ease;
-        }
-
-        .step-line.completed {
-            background: #28a745;
+            background: var(--tg-theme-button-color, #2481cc);
+            border-color: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
         }
 
         .form-step {
             display: none;
+            animation: fadeIn 0.3s ease-in-out;
         }
 
         .form-step.active {
             display: block;
         }
 
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .input-group {
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
 
         .input-group label {
             display: block;
             margin-bottom: 8px;
             font-weight: 500;
-            color: #333;
-            font-size: 14px;
+            color: var(--tg-theme-text-color, #000000);
         }
 
-        .input-field {
+        .dropdown {
+            position: relative;
             width: 100%;
-            padding: 15px;
-            border: 2px solid #e1e5e9;
-            border-radius: 12px;
+        }
+
+        .dropdown-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--tg-theme-hint-color, #e0e0e0);
+            border-radius: 8px;
             font-size: 16px;
-            transition: all 0.3s ease;
-            background: #f8f9fa;
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            cursor: pointer;
         }
 
-        .input-field:focus {
+        .dropdown-input:focus {
             outline: none;
-            border-color: #667eea;
-            background: white;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: var(--tg-theme-button-color, #2481cc);
         }
 
-        .input-field::placeholder {
-            color: #999;
+        .dropdown-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--tg-theme-bg-color, #ffffff);
+            border: 2px solid var(--tg-theme-hint-color, #e0e0e0);
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .dropdown-list.show {
+            display: block;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: none;
+            border-bottom: 1px solid var(--tg-theme-hint-color, #e0e0e0);
             font-size: 14px;
+            background: transparent;
+            color: var(--tg-theme-text-color, #000000);
         }
 
-        .error-input {
-            font-family: 'Courier New', monospace;
-            text-transform: uppercase;
+        .search-input:focus {
+            outline: none;
+            border-bottom-color: var(--tg-theme-button-color, #2481cc);
+        }
+
+        .dropdown-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--tg-theme-hint-color, #e0e0e0);
+            transition: background-color 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background: var(--tg-theme-hint-color, #f5f5f5);
+        }
+
+        .dropdown-item.selected {
+            background: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
+        }
+
+        .popular-brands {
+            padding: 16px;
+        }
+
+        .popular-brands h4 {
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: var(--tg-theme-hint-color, #999999);
+        }
+
+        .brand-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .brand-tag {
+            padding: 6px 12px;
+            background: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border-radius: 16px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .brand-tag:hover {
+            opacity: 0.8;
         }
 
         .btn {
-            width: 100%;
-            padding: 15px;
+            padding: 12px 24px;
             border: none;
-            border-radius: 12px;
+            border-radius: 8px;
             font-size: 16px;
-            font-weight: 600;
+            font-weight: 500;
             cursor: pointer;
-            transition: all 0.3s ease;
-            margin-bottom: 15px;
+            transition: all 0.2s;
+            margin-right: 10px;
+            margin-bottom: 10px;
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
         }
 
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn-secondary {
-            background: #f8f9fa;
-            color: #667eea;
-            border: 2px solid #667eea;
-        }
-
-        .btn-secondary:hover {
-            background: #667eea;
-            color: white;
+            opacity: 0.9;
         }
 
         .btn-back {
-            background: #6c757d;
-            color: white;
+            background: transparent;
+            color: var(--tg-theme-text-color, #000000);
+            border: 1px solid var(--tg-theme-hint-color, #e0e0e0);
         }
 
         .btn-back:hover {
-            background: #5a6268;
-        }
-
-        .examples {
-            margin-top: 20px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 12px;
-        }
-
-        .examples h3 {
-            margin-bottom: 15px;
-            color: #333;
-            font-size: 16px;
-        }
-
-        .example-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #e1e5e9;
-            cursor: pointer;
-        }
-
-        .example-item:last-child {
-            border-bottom: none;
-        }
-
-        .example-item:hover {
-            background: #e9ecef;
-            border-radius: 8px;
-            padding: 10px;
-            margin: 0 -10px;
-        }
-
-        .example-code {
-            font-family: 'Courier New', monospace;
-            font-weight: bold;
-            color: #667eea;
-            font-size: 14px;
-        }
-
-        .example-desc {
-            color: #666;
-            font-size: 12px;
-        }
-
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 20px;
-        }
-
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .result {
-            display: none;
-            margin-top: 20px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 12px;
-            border-left: 4px solid #667eea;
-        }
-
-        .result h3 {
-            color: #333;
-            margin-bottom: 15px;
-            font-size: 16px;
-        }
-
-        .result-content {
-            color: #666;
-            line-height: 1.6;
-            font-size: 14px;
-        }
-
-        .error-message {
-            display: none;
-            padding: 15px;
-            background: #fee;
-            border: 1px solid #fcc;
-            border-radius: 8px;
-            color: #c33;
-            margin-top: 15px;
-            font-size: 14px;
-        }
-
-        .success-message {
-            display: none;
-            padding: 15px;
-            background: #efe;
-            border: 1px solid #cfc;
-            border-radius: 8px;
-            color: #3c3;
-            margin-top: 15px;
-            font-size: 14px;
-        }
-
-        .footer {
-            padding: 20px;
-            text-align: center;
-            color: #666;
-            font-size: 12px;
-            border-top: 1px solid #e1e5e9;
-        }
-
-        .status {
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 8px;
-            font-size: 12px;
-            text-align: center;
-        }
-
-        .status.connected {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .status.disconnected {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+            background: var(--tg-theme-hint-color, #f5f5f5);
         }
 
         .car-info {
-            background: #e3f2fd;
-            border: 1px solid #bbdefb;
+            background: var(--tg-theme-hint-color, #f8f9fa);
             border-radius: 8px;
-            padding: 15px;
+            padding: 16px;
             margin-bottom: 20px;
         }
 
         .car-info h4 {
-            color: #1976d2;
-            margin-bottom: 10px;
-            font-size: 14px;
+            margin-bottom: 12px;
+            color: var(--tg-theme-text-color, #000000);
         }
 
         .car-info p {
-            color: #424242;
-            font-size: 12px;
-            margin: 5px 0;
+            margin-bottom: 8px;
+            font-size: 14px;
         }
 
-        @media (max-width: 480px) {
-            body {
-                padding: 10px;
-            }
-            
-            .container {
-                border-radius: 15px;
-            }
-            
-            .header {
-                padding: 25px 15px;
-            }
-            
-            .content {
-                padding: 25px 15px;
-            }
+        .car-info strong {
+            color: var(--tg-theme-text-color, #000000);
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .success-message {
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .status {
+            text-align: center;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .status.connected {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .status.disconnected {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .example-item {
+            padding: 8px 12px;
+            background: var(--tg-theme-hint-color, #f5f5f5);
+            border-radius: 6px;
+            margin: 4px 0;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-size: 14px;
+        }
+
+        .example-item:hover {
+            background: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🚗 OBD Errors Bot</h1>
-            <p>Расшифровка кодов ошибок автомобилей</p>
+            <h1>🔧 Расшифровка OBD ошибок</h1>
+            <p>Введите код ошибки и выберите автомобиль для точной диагностики</p>
         </div>
 
-        <div class="content">
-            <div id="status" class="status disconnected">
-                🔴 Проверка подключения к Telegram...
+        <div class="status" id="status">
+            Проверка подключения...
+        </div>
+
+        <!-- Индикатор шагов -->
+        <div class="step-indicator">
+            <div class="step active" id="step1">1</div>
+            <div class="step" id="step2">2</div>
+            <div class="step" id="step3">3</div>
+            <div class="step" id="step4">4</div>
+        </div>
+
+        <!-- Шаг 1: Код ошибки -->
+        <div class="form-step active" id="step1-content">
+            <div class="input-group">
+                <label for="errorCode">Код ошибки OBD:</label>
+                <input 
+                    type="text" 
+                    id="errorCode" 
+                    placeholder="Например: P0300, C1234, U0100..."
+                    style="width: 100%; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 16px;"
+                >
             </div>
 
-            <!-- Индикатор шагов -->
-            <div class="step-indicator">
-                <div class="step active" id="step1">1</div>
-                <div class="step-line" id="line1"></div>
-                <div class="step" id="step2">2</div>
-                <div class="step-line" id="line2"></div>
-                <div class="step" id="step3">3</div>
-                <div class="step-line" id="line3"></div>
-                <div class="step" id="step4">4</div>
-            </div>
+            <div class="example-item" onclick="setErrorCode('P0300')">P0300 - Пропуски зажигания</div>
+            <div class="example-item" onclick="setErrorCode('P0171')">P0171 - Бедная смесь</div>
+            <div class="example-item" onclick="setErrorCode('P0420')">P0420 - Катализатор</div>
+            <div class="example-item" onclick="setErrorCode('C1234')">C1234 - АБС</div>
 
-            <!-- Шаг 1: Код ошибки -->
-            <div class="form-step active" id="step1-content">
-                <div class="input-group">
-                    <label for="errorCode">Код ошибки:</label>
-                    <input 
-                        type="text" 
-                        id="errorCode" 
-                        class="input-field error-input" 
-                        placeholder="Например: P0301"
-                        maxlength="10"
-                    >
-                </div>
+            <button class="btn btn-primary" onclick="nextStep()">
+                Далее →
+            </button>
+        </div>
 
-                <button class="btn btn-primary" onclick="nextStep()">
-                    Далее →
-                </button>
-
-                <button class="btn btn-secondary" onclick="showExamples()">
-                    📋 Примеры кодов
-                </button>
-
-                <div class="examples" id="examples" style="display: none;">
-                    <h3>📋 Примеры кодов ошибок</h3>
-                    <div class="example-item" onclick="setErrorCode('P0301')">
-                        <span class="example-code">P0301</span>
-                        <span class="example-desc">Пропуск зажигания в цилиндре 1</span>
-                    </div>
-                    <div class="example-item" onclick="setErrorCode('P0171')">
-                        <span class="example-code">P0171</span>
-                        <span class="example-desc">Слишком бедная смесь</span>
-                    </div>
-                    <div class="example-item" onclick="setErrorCode('C1234')">
-                        <span class="example-code">C1234</span>
-                        <span class="example-desc">Ошибка ABS</span>
-                    </div>
-                    <div class="example-item" onclick="setErrorCode('U0100')">
-                        <span class="example-code">U0100</span>
-                        <span class="example-desc">Потеря связи с модулем</span>
-                    </div>
-                    <div class="example-item" onclick="setErrorCode('B1234')">
-                        <span class="example-code">B1234</span>
-                        <span class="example-desc">Ошибка кузова</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Шаг 2: Марка автомобиля -->
-            <div class="form-step" id="step2-content">
-                <div class="input-group">
-                    <label for="carBrand">Марка автомобиля:</label>
+        <!-- Шаг 2: Марка автомобиля -->
+        <div class="form-step" id="step2-content">
+            <div class="input-group">
+                <label for="carBrand">Марка автомобиля:</label>
+                <div class="dropdown">
                     <input 
                         type="text" 
                         id="carBrand" 
-                        class="input-field" 
-                        placeholder="Например: Toyota, BMW, Audi"
+                        class="dropdown-input" 
+                        placeholder="Начните вводить название марки..."
+                        readonly
                     >
+                    <div class="dropdown-list" id="brandDropdown">
+                        <input type="text" class="search-input" placeholder="Поиск марки..." id="brandSearch">
+                        <div class="popular-brands">
+                            <h4>Популярные марки:</h4>
+                            <div class="brand-tags" id="popularBrands">
+                                <!-- Заполнится динамически -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
-
-                <button class="btn btn-primary" onclick="nextStep()">
-                    Далее →
-                </button>
-                <button class="btn btn-back" onclick="prevStep()">
-                    ← Назад
-                </button>
             </div>
+            <button class="btn btn-primary" onclick="nextStep()">
+                Далее →
+            </button>
+            <button class="btn btn-back" onclick="prevStep()">
+                ← Назад
+            </button>
+        </div>
 
-            <!-- Шаг 3: Модель автомобиля -->
-            <div class="form-step" id="step3-content">
-                <div class="input-group">
-                    <label for="carModel">Модель автомобиля:</label>
+        <!-- Шаг 3: Модель автомобиля -->
+        <div class="form-step" id="step3-content">
+            <div class="input-group">
+                <label for="carModel">Модель автомобиля:</label>
+                <div class="dropdown">
                     <input 
                         type="text" 
                         id="carModel" 
-                        class="input-field" 
-                        placeholder="Например: Camry, X5, A4"
+                        class="dropdown-input" 
+                        placeholder="Выберите модель..."
+                        readonly
                     >
+                    <div class="dropdown-list" id="modelDropdown">
+                        <input type="text" class="search-input" placeholder="Поиск модели..." id="modelSearch">
+                    </div>
                 </div>
-
-                <button class="btn btn-primary" onclick="nextStep()">
-                    Далее →
-                </button>
-                <button class="btn btn-back" onclick="prevStep()">
-                    ← Назад
-                </button>
             </div>
+            <button class="btn btn-primary" onclick="nextStep()">
+                Далее →
+            </button>
+            <button class="btn btn-back" onclick="prevStep()">
+                ← Назад
+            </button>
+        </div>
 
-            <!-- Шаг 4: Год выпуска -->
-            <div class="form-step" id="step4-content">
-                <div class="input-group">
-                    <label for="carYear">Год выпуска:</label>
+        <!-- Шаг 4: Поколение автомобиля -->
+        <div class="form-step" id="step4-content">
+            <div class="input-group">
+                <label for="carGeneration">Поколение автомобиля:</label>
+                <div class="dropdown">
                     <input 
-                        type="number" 
-                        id="carYear" 
-                        class="input-field" 
-                        placeholder="Например: 2020"
-                        min="1990"
-                        max="2025"
+                        type="text" 
+                        id="carGeneration" 
+                        class="dropdown-input" 
+                        placeholder="Выберите поколение..."
+                        readonly
                     >
+                    <div class="dropdown-list" id="generationDropdown">
+                        <input type="text" class="search-input" placeholder="Поиск поколения..." id="generationSearch">
+                    </div>
                 </div>
-
-                <div class="car-info" id="carInfo" style="display: none;">
-                    <h4>📋 Собранная информация:</h4>
-                    <p><strong>Код ошибки:</strong> <span id="infoCode"></span></p>
-                    <p><strong>Марка:</strong> <span id="infoBrand"></span></p>
-                    <p><strong>Модель:</strong> <span id="infoModel"></span></p>
-                    <p><strong>Год:</strong> <span id="infoYear"></span></p>
-                </div>
-
-                <button class="btn btn-primary" onclick="sendErrorCode()">
-                    🔍 Расшифровать ошибку
-                </button>
-                <button class="btn btn-back" onclick="prevStep()">
-                    ← Назад
-                </button>
             </div>
 
-            <div class="loading" id="loading">
-                <div class="spinner"></div>
-                <p>Обрабатываю код ошибки...</p>
+            <div class="car-info" id="carInfo" style="display: none;">
+                <h4>📋 Собранная информация:</h4>
+                <p><strong>Код ошибки:</strong> <span id="infoCode"></span></p>
+                <p><strong>Автомобиль:</strong> <span id="infoCar"></span></p>
             </div>
 
-            <div class="result" id="result">
-                <h3>📊 Результат расшифровки</h3>
-                <div class="result-content" id="resultContent"></div>
-            </div>
-
-            <div class="error-message" id="errorMessage"></div>
-            <div class="success-message" id="successMessage"></div>
+            <button class="btn btn-primary" onclick="sendErrorCode()">
+                🔍 Расшифровать ошибку
+            </button>
+            <button class="btn btn-back" onclick="prevStep()">
+                ← Назад
+            </button>
         </div>
 
-        <div class="footer">
-            <p>Powered by OpenRouter AI • DeepSeek Chat v3</p>
-        </div>
+        <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
     </div>
 
     <script>
-        // Инициализация Telegram WebApp
         let tg = window.Telegram.WebApp;
-        let isConnected = false;
         let currentStep = 1;
         let formData = {
             errorCode: '',
-            carBrand: '',
-            carModel: '',
-            carYear: ''
+            markId: null,
+            modelId: null,
+            generationId: null,
+            carInfo: null
         };
 
-        // Проверка подключения к Telegram
-        function checkConnection() {
-            try {
-                if (tg && tg.initData) {
-                    isConnected = true;
-                    document.getElementById('status').className = 'status connected';
-                    document.getElementById('status').innerHTML = '🟢 Подключено к Telegram';
-                    tg.expand();
-                    tg.ready();
-                } else {
-                    isConnected = false;
-                    document.getElementById('status').className = 'status disconnected';
-                    document.getElementById('status').innerHTML = '🔴 Не подключено к Telegram (тестовый режим)';
-                }
-            } catch (error) {
-                console.log('Telegram WebApp не доступен:', error);
-                isConnected = false;
-                document.getElementById('status').className = 'status disconnected';
-                document.getElementById('status').innerHTML = '🔴 Не подключено к Telegram (тестовый режим)';
-            }
-        }
-
-        // Основные элементы
+        // Элементы формы
         const errorInput = document.getElementById('errorCode');
         const brandInput = document.getElementById('carBrand');
         const modelInput = document.getElementById('carModel');
-        const yearInput = document.getElementById('carYear');
-        const loading = document.getElementById('loading');
-        const result = document.getElementById('result');
-        const resultContent = document.getElementById('resultContent');
-        const errorMessage = document.getElementById('errorMessage');
-        const successMessage = document.getElementById('successMessage');
-        const examples = document.getElementById('examples');
+        const generationInput = document.getElementById('carGeneration');
         const carInfo = document.getElementById('carInfo');
 
-        // Функция перехода к следующему шагу
-        function nextStep() {
-            if (currentStep === 1) {
-                const code = errorInput.value.trim().toUpperCase();
-                if (!code) {
-                    showError('Пожалуйста, введите код ошибки');
-                    return;
-                }
-                if (!isValidErrorCode(code)) {
-                    showError('Неверный формат кода. Используйте формат: P0301, C1234, U0100');
-                    return;
-                }
-                formData.errorCode = code;
-            } else if (currentStep === 2) {
-                const brand = brandInput.value.trim();
-                if (!brand) {
-                    showError('Пожалуйста, введите марку автомобиля');
-                    return;
-                }
-                formData.carBrand = brand;
-            } else if (currentStep === 3) {
-                const model = modelInput.value.trim();
-                if (!model) {
-                    showError('Пожалуйста, введите модель автомобиля');
-                    return;
-                }
-                formData.carModel = model;
-            }
+        // Инициализация
+        tg.ready();
+        tg.expand();
+        checkConnection();
 
-            // Скрываем текущий шаг
-            document.getElementById(`step${currentStep}-content`).classList.remove('active');
-            
-            // Показываем следующий шаг
-            currentStep++;
-            document.getElementById(`step${currentStep}-content`).classList.add('active');
-            
-            // Обновляем индикатор
-            updateStepIndicator();
-            
-            // Если это последний шаг, показываем информацию
-            if (currentStep === 4) {
-                showCarInfo();
-            }
-            
-            hideMessages();
-        }
-
-        // Функция перехода к предыдущему шагу
-        function prevStep() {
-            if (currentStep > 1) {
-                // Скрываем текущий шаг
-                document.getElementById(`step${currentStep}-content`).classList.remove('active');
-                
-                // Показываем предыдущий шаг
-                currentStep--;
-                document.getElementById(`step${currentStep}-content`).classList.add('active');
-                
-                // Обновляем индикатор
-                updateStepIndicator();
-                
-                hideMessages();
+        function checkConnection() {
+            const status = document.getElementById('status');
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                status.textContent = '✅ Подключено к Telegram';
+                status.className = 'status connected';
+            } else {
+                status.textContent = '❌ Не подключено к Telegram (тестовый режим)';
+                status.className = 'status disconnected';
             }
         }
 
-        // Обновление индикатора шагов
         function updateStepIndicator() {
             for (let i = 1; i <= 4; i++) {
                 const step = document.getElementById(`step${i}`);
-                const line = document.getElementById(`line${i}`);
-                
                 if (i < currentStep) {
                     step.className = 'step completed';
-                    if (line) line.className = 'step-line completed';
                 } else if (i === currentStep) {
                     step.className = 'step active';
-                    if (line) line.className = 'step-line';
                 } else {
                     step.className = 'step';
-                    if (line) line.className = 'step-line';
                 }
             }
         }
 
-        // Показ информации об автомобиле
-        function showCarInfo() {
-            document.getElementById('infoCode').textContent = formData.errorCode;
-            document.getElementById('infoBrand').textContent = formData.carBrand;
-            document.getElementById('infoModel').textContent = formData.carModel;
-            carInfo.style.display = 'block';
+        function nextStep() {
+            if (currentStep === 1) {
+                if (!formData.errorCode.trim()) {
+                    showError('Пожалуйста, введите код ошибки');
+                    return;
+                }
+                formData.errorCode = formData.errorCode.trim().toUpperCase();
+            } else if (currentStep === 2) {
+                if (!formData.markId) {
+                    showError('Пожалуйста, выберите марку автомобиля');
+                    return;
+                }
+            } else if (currentStep === 3) {
+                if (!formData.modelId) {
+                    showError('Пожалуйста, выберите модель автомобиля');
+                    return;
+                }
+            }
+
+            if (currentStep < 4) {
+                currentStep++;
+                updateStepIndicator();
+                
+                // Скрываем все шаги
+                document.querySelectorAll('.form-step').forEach(step => {
+                    step.classList.remove('active');
+                });
+                
+                // Показываем текущий шаг
+                document.getElementById(`step${currentStep}-content`).classList.add('active');
+                
+                // Загружаем данные для нового шага
+                if (currentStep === 2) {
+                    loadMarks();
+                } else if (currentStep === 3) {
+                    loadModels();
+                } else if (currentStep === 4) {
+                    loadGenerations();
+                }
+            }
         }
 
-        // Функция отправки кода ошибки
-        async function sendErrorCode() {
-            const year = yearInput.value.trim();
-            if (!year) {
-                showError('Пожалуйста, введите год выпуска');
-                return;
+        function prevStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                updateStepIndicator();
+                
+                // Скрываем все шаги
+                document.querySelectorAll('.form-step').forEach(step => {
+                    step.classList.remove('active');
+                });
+                
+                // Показываем текущий шаг
+                document.getElementById(`step${currentStep}-content`).classList.add('active');
             }
-            if (year < 1990 || year > 2025) {
-                showError('Год должен быть между 1990 и 2025');
-                return;
-            }
-            
-            formData.carYear = year;
+        }
 
-            // Показываем загрузку
-            hideMessages();
-            showLoading();
-            hideResult();
-
+        // API функции
+        async function fetchPopularMarks() {
             try {
-                if (isConnected && tg) {
-                    // Отправляем сообщение в Telegram
-                    tg.sendData(JSON.stringify({
-                        action: 'decode_error',
-                        code: formData.errorCode,
-                        brand: formData.carBrand,
-                        model: formData.carModel,
-                        year: formData.carYear
-                    }));
-                    showSuccess('Данные отправлены в чат!');
-                } else {
-                    // Тестовый режим - показываем заглушку
-                    setTimeout(() => {
-                        showResult(`🚗 **Код ошибки:** \`${formData.errorCode}\`
-**Автомобиль:** ${formData.carBrand} ${formData.carModel} (${formData.carYear})
-
-**Описание:** Это тестовый режим. В реальном боте здесь будет подробное описание ошибки через OpenRouter AI с учетом марки, модели и года автомобиля.
-
-**Пример ответа для ${formData.errorCode}:**
-• **Что означает:** Ошибка диагностики автомобиля
-• **Возможные причины:** Проблемы с датчиками, проводкой, модулями
-• **Рекомендации:** Обратитесь к специалисту для диагностики
-• **Критичность:** Средняя
-
----
-💡 *Это тестовый режим. В реальном боте ответ придет через Telegram*`);
-                        hideLoading();
-                    }, 2000);
-                }
-                
-                // Очищаем форму
-                resetForm();
-                
+                const response = await fetch('/api/marks/popular');
+                return await response.json();
             } catch (error) {
-                hideLoading();
-                showError('Ошибка отправки: ' + error.message);
+                console.error('Ошибка получения популярных марок:', error);
+                return [];
             }
         }
 
-        // Сброс формы
+        async function fetchAllMarks() {
+            try {
+                const response = await fetch('/api/marks');
+                return await response.json();
+            } catch (error) {
+                console.error('Ошибка получения всех марок:', error);
+                return [];
+            }
+        }
+
+        async function fetchModels(markId) {
+            try {
+                const response = await fetch(`/api/models/${markId}`);
+                return await response.json();
+            } catch (error) {
+                console.error('Ошибка получения моделей:', error);
+                return [];
+            }
+        }
+
+        async function fetchGenerations(modelId) {
+            try {
+                const response = await fetch(`/api/generations/${modelId}`);
+                return await response.json();
+            } catch (error) {
+                console.error('Ошибка получения поколений:', error);
+                return [];
+            }
+        }
+
+        // Загрузка данных
+        async function loadMarks() {
+            const popularMarks = await fetchPopularMarks();
+            const allMarks = await fetchAllMarks();
+            
+            // Заполняем популярные марки
+            const popularBrands = document.getElementById('popularBrands');
+            popularBrands.innerHTML = '';
+            popularMarks.forEach(mark => {
+                const tag = document.createElement('div');
+                tag.className = 'brand-tag';
+                tag.textContent = mark.cyrillic_name || mark.name;
+                tag.onclick = () => selectMark(mark);
+                popularBrands.appendChild(tag);
+            });
+            
+            // Настраиваем поиск
+            setupBrandSearch(allMarks);
+        }
+
+        async function loadModels() {
+            const models = await fetchModels(formData.markId);
+            setupModelSearch(models);
+        }
+
+        async function loadGenerations() {
+            const generations = await fetchGenerations(formData.modelId);
+            setupGenerationSearch(generations);
+        }
+
+        // Настройка поиска марок
+        function setupBrandSearch(marks) {
+            const brandSearch = document.getElementById('brandSearch');
+            const brandDropdown = document.getElementById('brandDropdown');
+            
+            brandSearch.oninput = () => {
+                const query = brandSearch.value.toLowerCase();
+                const filtered = marks.filter(mark => 
+                    mark.name.toLowerCase().includes(query) || 
+                    (mark.cyrillic_name && mark.cyrillic_name.toLowerCase().includes(query))
+                );
+                showBrandResults(filtered);
+            };
+            
+            brandInput.onclick = () => {
+                brandDropdown.classList.add('show');
+                brandSearch.focus();
+            };
+        }
+
+        function showBrandResults(marks) {
+            const brandDropdown = document.getElementById('brandDropdown');
+            const items = brandDropdown.querySelectorAll('.dropdown-item');
+            items.forEach(item => item.remove());
+            
+            marks.forEach(mark => {
+                const item = document.createElement('div');
+                item.className = 'dropdown-item';
+                item.textContent = mark.cyrillic_name || mark.name;
+                item.onclick = () => selectMark(mark);
+                brandDropdown.appendChild(item);
+            });
+        }
+
+        function selectMark(mark) {
+            formData.markId = mark.id;
+            brandInput.value = mark.cyrillic_name || mark.name;
+            document.getElementById('brandDropdown').classList.remove('show');
+            // Очищаем следующие поля
+            modelInput.value = '';
+            generationInput.value = '';
+            formData.modelId = null;
+            formData.generationId = null;
+            formData.carInfo = null;
+        }
+
+        // Настройка поиска моделей
+        function setupModelSearch(models) {
+            const modelSearch = document.getElementById('modelSearch');
+            const modelDropdown = document.getElementById('modelDropdown');
+            
+            modelSearch.oninput = () => {
+                const query = modelSearch.value.toLowerCase();
+                const filtered = models.filter(model => 
+                    model.name.toLowerCase().includes(query) || 
+                    (model.cyrillic_name && model.cyrillic_name.toLowerCase().includes(query))
+                );
+                showModelResults(filtered);
+            };
+            
+            modelInput.onclick = () => {
+                modelDropdown.classList.add('show');
+                modelSearch.focus();
+            };
+        }
+
+        function showModelResults(models) {
+            const modelDropdown = document.getElementById('modelDropdown');
+            const items = modelDropdown.querySelectorAll('.dropdown-item');
+            items.forEach(item => item.remove());
+            
+            models.forEach(model => {
+                const item = document.createElement('div');
+                item.className = 'dropdown-item';
+                item.textContent = model.cyrillic_name || model.name;
+                item.onclick = () => selectModel(model);
+                modelDropdown.appendChild(item);
+            });
+        }
+
+        function selectModel(model) {
+            formData.modelId = model.id;
+            modelInput.value = model.cyrillic_name || model.name;
+            document.getElementById('modelDropdown').classList.remove('show');
+            // Очищаем следующее поле
+            generationInput.value = '';
+            formData.generationId = null;
+            formData.carInfo = null;
+        }
+
+        // Настройка поиска поколений
+        function setupGenerationSearch(generations) {
+            const generationSearch = document.getElementById('generationSearch');
+            const generationDropdown = document.getElementById('generationDropdown');
+            
+            generationSearch.oninput = () => {
+                const query = generationSearch.value.toLowerCase();
+                const filtered = generations.filter(gen => 
+                    gen.name.toLowerCase().includes(query)
+                );
+                showGenerationResults(filtered);
+            };
+            
+            generationInput.onclick = () => {
+                generationDropdown.classList.add('show');
+                generationSearch.focus();
+            };
+        }
+
+        function showGenerationResults(generations) {
+            const generationDropdown = document.getElementById('generationDropdown');
+            const items = generationDropdown.querySelectorAll('.dropdown-item');
+            items.forEach(item => item.remove());
+            
+            generations.forEach(generation => {
+                const item = document.createElement('div');
+                item.className = 'dropdown-item';
+                const yearText = generation.year_stop ? `${generation.year_start}-${generation.year_stop}` : `${generation.year_start}-`;
+                item.textContent = `${generation.name} (${yearText})`;
+                item.onclick = () => selectGeneration(generation);
+                generationDropdown.appendChild(item);
+            });
+        }
+
+        function selectGeneration(generation) {
+            formData.generationId = generation.id;
+            formData.carInfo = {
+                mark: brandInput.value,
+                model: modelInput.value,
+                generation: generation.name,
+                yearFrom: generation.year_start,
+                yearTo: generation.year_stop
+            };
+            const yearText = generation.year_stop ? `${generation.year_start}-${generation.year_stop}` : `${generation.year_start}-`;
+            generationInput.value = `${generation.name} (${yearText})`;
+            document.getElementById('generationDropdown').classList.remove('show');
+            showCarInfo();
+        }
+
+        function showCarInfo() {
+            if (formData.carInfo) {
+                document.getElementById('infoCode').textContent = formData.errorCode;
+                const yearText = formData.carInfo.yearTo ? `${formData.carInfo.yearFrom}-${formData.carInfo.yearTo}` : `${formData.carInfo.yearFrom}-`;
+                document.getElementById('infoCar').textContent = 
+                    `${formData.carInfo.mark} ${formData.carInfo.model} ${formData.carInfo.generation} (${yearText})`;
+                carInfo.style.display = 'block';
+            }
+        }
+
+        function setErrorCode(code) {
+            errorInput.value = code;
+            formData.errorCode = code;
+        }
+
+        async function sendErrorCode() {
+            if (!formData.generationId) {
+                showError('Пожалуйста, выберите поколение автомобиля');
+                return;
+            }
+
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                // Отправляем данные в Telegram
+                tg.sendData(JSON.stringify({
+                    action: 'decode_error',
+                    code: formData.errorCode,
+                    generationId: formData.generationId,
+                    carInfo: formData.carInfo
+                }));
+                
+                showSuccess('Данные отправлены в Telegram!');
+            } else {
+                // Тестовый режим
+                const yearText = formData.carInfo.yearTo ? `${formData.carInfo.yearFrom}-${formData.carInfo.yearTo}` : `${formData.carInfo.yearFrom}-`;
+                showResult(`🚗 **Код ошибки:** \`${formData.errorCode}\`
+**Автомобиль:** ${formData.carInfo.mark} ${formData.carInfo.model} ${formData.carInfo.generation} (${yearText})
+
+📋 Данные отправлены в Telegram для расшифровки ошибки.
+
+*Это тестовый режим - в реальном Telegram данные будут отправлены боту для обработки.*`);
+            }
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            document.getElementById('successMessage').style.display = 'none';
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successMessage');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        function showResult(message) {
+            const successDiv = document.getElementById('successMessage');
+            successDiv.innerHTML = message.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/`(.*?)`/g, '<code>$1</code>');
+            successDiv.style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
         function resetForm() {
             errorInput.value = '';
             brandInput.value = '';
             modelInput.value = '';
-            yearInput.value = '';
+            generationInput.value = '';
             formData = {
                 errorCode: '',
-                carBrand: '',
-                carModel: '',
-                carYear: ''
+                markId: null,
+                modelId: null,
+                generationId: null,
+                carInfo: null
             };
             currentStep = 1;
             updateStepIndicator();
             document.querySelectorAll('.form-step').forEach(step => step.classList.remove('active'));
             document.getElementById('step1-content').classList.add('active');
             carInfo.style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'none';
         }
 
-        // Функция установки кода ошибки из примера
-        function setErrorCode(code) {
-            errorInput.value = code;
-            errorInput.focus();
-            examples.style.display = 'none';
-        }
-
-        // Функция показа примеров
-        function showExamples() {
-            if (examples.style.display === 'none') {
-                examples.style.display = 'block';
-                hideMessages();
-                hideResult();
-            } else {
-                examples.style.display = 'none';
-            }
-        }
-
-        // Валидация кода ошибки
-        function isValidErrorCode(code) {
-            // Проверяем формат: буква + 4 цифры
-            const pattern = /^[PBCU]\d{4}$/;
-            return pattern.test(code);
-        }
-
-        // Вспомогательные функции
-        function showLoading() {
-            loading.style.display = 'block';
-        }
-
-        function hideLoading() {
-            loading.style.display = 'none';
-        }
-
-        function showResult(content) {
-            resultContent.innerHTML = content;
-            result.style.display = 'block';
-        }
-
-        function hideResult() {
-            result.style.display = 'none';
-        }
-
-        function showError(message) {
-            errorMessage.textContent = message;
-            errorMessage.style.display = 'block';
-            hideLoading();
-            hideResult();
-        }
-
-        function showSuccess(message) {
-            successMessage.textContent = message;
-            successMessage.style.display = 'block';
-            hideLoading();
-            hideResult();
-        }
-
-        function hideMessages() {
-            errorMessage.style.display = 'none';
-            successMessage.style.display = 'none';
-        }
-
-        // Обработка Enter в полях ввода
-        errorInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                nextStep();
-            }
+        // Обработчики событий
+        errorInput.addEventListener('input', function() {
+            formData.errorCode = this.value;
         });
 
-        brandInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                nextStep();
-            }
-        });
-
-        modelInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                nextStep();
-            }
-        });
-
-        yearInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                sendErrorCode();
-            }
-        });
-
-        // Автоматическая капитализация при вводе
-        errorInput.addEventListener('input', function(e) {
-            this.value = this.value.toUpperCase();
-        });
-
-        // Инициализация при загрузке страницы
-        document.addEventListener('DOMContentLoaded', function() {
-            checkConnection();
-            
-            // Настройка темы Telegram
-            if (tg && tg.colorScheme === 'dark') {
-                document.body.style.background = '#1a1a1a';
-                document.querySelector('.container').style.background = '#2a2a2a';
-                document.querySelector('.container').style.color = '#fff';
+        // Закрытие dropdown при клике вне их
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.dropdown')) {
+                document.querySelectorAll('.dropdown-list').forEach(dropdown => {
+                    dropdown.classList.remove('show');
+                });
             }
         });
     </script>
