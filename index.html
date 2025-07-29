@@ -50,6 +50,55 @@
             padding: 30px 20px;
         }
 
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            padding: 0 10px;
+        }
+
+        .step {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: white;
+            background: #e1e5e9;
+            transition: all 0.3s ease;
+        }
+
+        .step.active {
+            background: #667eea;
+        }
+
+        .step.completed {
+            background: #28a745;
+        }
+
+        .step-line {
+            flex: 1;
+            height: 2px;
+            background: #e1e5e9;
+            margin: 15px 10px 0;
+            transition: all 0.3s ease;
+        }
+
+        .step-line.completed {
+            background: #28a745;
+        }
+
+        .form-step {
+            display: none;
+        }
+
+        .form-step.active {
+            display: block;
+        }
+
         .input-group {
             margin-bottom: 25px;
         }
@@ -62,28 +111,31 @@
             font-size: 14px;
         }
 
-        .error-input {
+        .input-field {
             width: 100%;
             padding: 15px;
             border: 2px solid #e1e5e9;
             border-radius: 12px;
             font-size: 16px;
-            font-family: 'Courier New', monospace;
-            text-transform: uppercase;
             transition: all 0.3s ease;
             background: #f8f9fa;
         }
 
-        .error-input:focus {
+        .input-field:focus {
             outline: none;
             border-color: #667eea;
             background: white;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
-        .error-input::placeholder {
+        .input-field::placeholder {
             color: #999;
             font-size: 14px;
+        }
+
+        .error-input {
+            font-family: 'Courier New', monospace;
+            text-transform: uppercase;
         }
 
         .btn {
@@ -117,6 +169,15 @@
         .btn-secondary:hover {
             background: #667eea;
             color: white;
+        }
+
+        .btn-back {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-back:hover {
+            background: #5a6268;
         }
 
         .examples {
@@ -256,6 +317,26 @@
             border: 1px solid #f5c6cb;
         }
 
+        .car-info {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .car-info h4 {
+            color: #1976d2;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .car-info p {
+            color: #424242;
+            font-size: 12px;
+            margin: 5px 0;
+        }
+
         @media (max-width: 480px) {
             body {
                 padding: 10px;
@@ -287,24 +368,132 @@
                 🔴 Проверка подключения к Telegram...
             </div>
 
-            <div class="input-group">
-                <label for="errorCode">Код ошибки:</label>
-                <input 
-                    type="text" 
-                    id="errorCode" 
-                    class="error-input" 
-                    placeholder="Например: P0301"
-                    maxlength="10"
-                >
+            <!-- Индикатор шагов -->
+            <div class="step-indicator">
+                <div class="step active" id="step1">1</div>
+                <div class="step-line" id="line1"></div>
+                <div class="step" id="step2">2</div>
+                <div class="step-line" id="line2"></div>
+                <div class="step" id="step3">3</div>
+                <div class="step-line" id="line3"></div>
+                <div class="step" id="step4">4</div>
             </div>
 
-            <button class="btn btn-primary" onclick="sendErrorCode()">
-                🔍 Расшифровать ошибку
-            </button>
+            <!-- Шаг 1: Код ошибки -->
+            <div class="form-step active" id="step1-content">
+                <div class="input-group">
+                    <label for="errorCode">Код ошибки:</label>
+                    <input 
+                        type="text" 
+                        id="errorCode" 
+                        class="input-field error-input" 
+                        placeholder="Например: P0301"
+                        maxlength="10"
+                    >
+                </div>
 
-            <button class="btn btn-secondary" onclick="showExamples()">
-                📋 Примеры кодов
-            </button>
+                <button class="btn btn-primary" onclick="nextStep()">
+                    Далее →
+                </button>
+
+                <button class="btn btn-secondary" onclick="showExamples()">
+                    📋 Примеры кодов
+                </button>
+
+                <div class="examples" id="examples" style="display: none;">
+                    <h3>📋 Примеры кодов ошибок</h3>
+                    <div class="example-item" onclick="setErrorCode('P0301')">
+                        <span class="example-code">P0301</span>
+                        <span class="example-desc">Пропуск зажигания в цилиндре 1</span>
+                    </div>
+                    <div class="example-item" onclick="setErrorCode('P0171')">
+                        <span class="example-code">P0171</span>
+                        <span class="example-desc">Слишком бедная смесь</span>
+                    </div>
+                    <div class="example-item" onclick="setErrorCode('C1234')">
+                        <span class="example-code">C1234</span>
+                        <span class="example-desc">Ошибка ABS</span>
+                    </div>
+                    <div class="example-item" onclick="setErrorCode('U0100')">
+                        <span class="example-code">U0100</span>
+                        <span class="example-desc">Потеря связи с модулем</span>
+                    </div>
+                    <div class="example-item" onclick="setErrorCode('B1234')">
+                        <span class="example-code">B1234</span>
+                        <span class="example-desc">Ошибка кузова</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Шаг 2: Марка автомобиля -->
+            <div class="form-step" id="step2-content">
+                <div class="input-group">
+                    <label for="carBrand">Марка автомобиля:</label>
+                    <input 
+                        type="text" 
+                        id="carBrand" 
+                        class="input-field" 
+                        placeholder="Например: Toyota, BMW, Audi"
+                    >
+                </div>
+
+                <button class="btn btn-primary" onclick="nextStep()">
+                    Далее →
+                </button>
+                <button class="btn btn-back" onclick="prevStep()">
+                    ← Назад
+                </button>
+            </div>
+
+            <!-- Шаг 3: Модель автомобиля -->
+            <div class="form-step" id="step3-content">
+                <div class="input-group">
+                    <label for="carModel">Модель автомобиля:</label>
+                    <input 
+                        type="text" 
+                        id="carModel" 
+                        class="input-field" 
+                        placeholder="Например: Camry, X5, A4"
+                    >
+                </div>
+
+                <button class="btn btn-primary" onclick="nextStep()">
+                    Далее →
+                </button>
+                <button class="btn btn-back" onclick="prevStep()">
+                    ← Назад
+                </button>
+            </div>
+
+            <!-- Шаг 4: Год выпуска -->
+            <div class="form-step" id="step4-content">
+                <div class="input-group">
+                    <label for="carYear">Год выпуска:</label>
+                    <input 
+                        type="number" 
+                        id="carYear" 
+                        class="input-field" 
+                        placeholder="Например: 2020"
+                        min="1990"
+                        max="2025"
+                    >
+                </div>
+
+                <div class="car-info" id="carInfo" style="display: none;">
+                    <h4>📋 Собранная информация:</h4>
+                    <p><strong>Код ошибки:</strong> <span id="infoCode"></span></p>
+                    <p><strong>Марка:</strong> <span id="infoBrand"></span></p>
+                    <p><strong>Модель:</strong> <span id="infoModel"></span></p>
+                    <p><strong>Год:</strong> <span id="infoYear"></span></p>
+                </div>
+
+                <button class="btn btn-primary" onclick="sendErrorCode()">
+                    🔍 Расшифровать ошибку
+                </button>
+                <button class="btn btn-back" onclick="prevStep()">
+                    ← Назад
+                </button>
+            </div>
 
             <div class="loading" id="loading">
                 <div class="spinner"></div>
@@ -318,30 +507,6 @@
 
             <div class="error-message" id="errorMessage"></div>
             <div class="success-message" id="successMessage"></div>
-
-            <div class="examples" id="examples" style="display: none;">
-                <h3>📋 Примеры кодов ошибок</h3>
-                <div class="example-item" onclick="setErrorCode('P0301')">
-                    <span class="example-code">P0301</span>
-                    <span class="example-desc">Пропуск зажигания в цилиндре 1</span>
-                </div>
-                <div class="example-item" onclick="setErrorCode('P0171')">
-                    <span class="example-code">P0171</span>
-                    <span class="example-desc">Слишком бедная смесь</span>
-                </div>
-                <div class="example-item" onclick="setErrorCode('C1234')">
-                    <span class="example-code">C1234</span>
-                    <span class="example-desc">Ошибка ABS</span>
-                </div>
-                <div class="example-item" onclick="setErrorCode('U0100')">
-                    <span class="example-code">U0100</span>
-                    <span class="example-desc">Потеря связи с модулем</span>
-                </div>
-                <div class="example-item" onclick="setErrorCode('B1234')">
-                    <span class="example-code">B1234</span>
-                    <span class="example-desc">Ошибка кузова</span>
-                </div>
-            </div>
         </div>
 
         <div class="footer">
@@ -353,6 +518,13 @@
         // Инициализация Telegram WebApp
         let tg = window.Telegram.WebApp;
         let isConnected = false;
+        let currentStep = 1;
+        let formData = {
+            errorCode: '',
+            carBrand: '',
+            carModel: '',
+            carYear: ''
+        };
 
         // Проверка подключения к Telegram
         function checkConnection() {
@@ -378,26 +550,121 @@
 
         // Основные элементы
         const errorInput = document.getElementById('errorCode');
+        const brandInput = document.getElementById('carBrand');
+        const modelInput = document.getElementById('carModel');
+        const yearInput = document.getElementById('carYear');
         const loading = document.getElementById('loading');
         const result = document.getElementById('result');
         const resultContent = document.getElementById('resultContent');
         const errorMessage = document.getElementById('errorMessage');
         const successMessage = document.getElementById('successMessage');
         const examples = document.getElementById('examples');
+        const carInfo = document.getElementById('carInfo');
+
+        // Функция перехода к следующему шагу
+        function nextStep() {
+            if (currentStep === 1) {
+                const code = errorInput.value.trim().toUpperCase();
+                if (!code) {
+                    showError('Пожалуйста, введите код ошибки');
+                    return;
+                }
+                if (!isValidErrorCode(code)) {
+                    showError('Неверный формат кода. Используйте формат: P0301, C1234, U0100');
+                    return;
+                }
+                formData.errorCode = code;
+            } else if (currentStep === 2) {
+                const brand = brandInput.value.trim();
+                if (!brand) {
+                    showError('Пожалуйста, введите марку автомобиля');
+                    return;
+                }
+                formData.carBrand = brand;
+            } else if (currentStep === 3) {
+                const model = modelInput.value.trim();
+                if (!model) {
+                    showError('Пожалуйста, введите модель автомобиля');
+                    return;
+                }
+                formData.carModel = model;
+            }
+
+            // Скрываем текущий шаг
+            document.getElementById(`step${currentStep}-content`).classList.remove('active');
+            
+            // Показываем следующий шаг
+            currentStep++;
+            document.getElementById(`step${currentStep}-content`).classList.add('active');
+            
+            // Обновляем индикатор
+            updateStepIndicator();
+            
+            // Если это последний шаг, показываем информацию
+            if (currentStep === 4) {
+                showCarInfo();
+            }
+            
+            hideMessages();
+        }
+
+        // Функция перехода к предыдущему шагу
+        function prevStep() {
+            if (currentStep > 1) {
+                // Скрываем текущий шаг
+                document.getElementById(`step${currentStep}-content`).classList.remove('active');
+                
+                // Показываем предыдущий шаг
+                currentStep--;
+                document.getElementById(`step${currentStep}-content`).classList.add('active');
+                
+                // Обновляем индикатор
+                updateStepIndicator();
+                
+                hideMessages();
+            }
+        }
+
+        // Обновление индикатора шагов
+        function updateStepIndicator() {
+            for (let i = 1; i <= 4; i++) {
+                const step = document.getElementById(`step${i}`);
+                const line = document.getElementById(`line${i}`);
+                
+                if (i < currentStep) {
+                    step.className = 'step completed';
+                    if (line) line.className = 'step-line completed';
+                } else if (i === currentStep) {
+                    step.className = 'step active';
+                    if (line) line.className = 'step-line';
+                } else {
+                    step.className = 'step';
+                    if (line) line.className = 'step-line';
+                }
+            }
+        }
+
+        // Показ информации об автомобиле
+        function showCarInfo() {
+            document.getElementById('infoCode').textContent = formData.errorCode;
+            document.getElementById('infoBrand').textContent = formData.carBrand;
+            document.getElementById('infoModel').textContent = formData.carModel;
+            carInfo.style.display = 'block';
+        }
 
         // Функция отправки кода ошибки
         async function sendErrorCode() {
-            const code = errorInput.value.trim().toUpperCase();
+            const year = yearInput.value.trim();
+            if (!year) {
+                showError('Пожалуйста, введите год выпуска');
+                return;
+            }
+            if (year < 1990 || year > 2025) {
+                showError('Год должен быть между 1990 и 2025');
+                return;
+            }
             
-            if (!code) {
-                showError('Пожалуйста, введите код ошибки');
-                return;
-            }
-
-            if (!isValidErrorCode(code)) {
-                showError('Неверный формат кода. Используйте формат: P0301, C1234, U0100');
-                return;
-            }
+            formData.carYear = year;
 
             // Показываем загрузку
             hideMessages();
@@ -409,17 +676,21 @@
                     // Отправляем сообщение в Telegram
                     tg.sendData(JSON.stringify({
                         action: 'decode_error',
-                        code: code
+                        code: formData.errorCode,
+                        brand: formData.carBrand,
+                        model: formData.carModel,
+                        year: formData.carYear
                     }));
-                    showSuccess('Код ошибки отправлен в чат!');
+                    showSuccess('Данные отправлены в чат!');
                 } else {
                     // Тестовый режим - показываем заглушку
                     setTimeout(() => {
-                        showResult(`🚗 **Код ошибки:** \`${code}\`
+                        showResult(`🚗 **Код ошибки:** \`${formData.errorCode}\`
+**Автомобиль:** ${formData.carBrand} ${formData.carModel} (${formData.carYear})
 
-**Описание:** Это тестовый режим. В реальном боте здесь будет подробное описание ошибки через OpenRouter AI.
+**Описание:** Это тестовый режим. В реальном боте здесь будет подробное описание ошибки через OpenRouter AI с учетом марки, модели и года автомобиля.
 
-**Пример ответа для ${code}:**
+**Пример ответа для ${formData.errorCode}:**
 • **Что означает:** Ошибка диагностики автомобиля
 • **Возможные причины:** Проблемы с датчиками, проводкой, модулями
 • **Рекомендации:** Обратитесь к специалисту для диагностики
@@ -431,13 +702,32 @@
                     }, 2000);
                 }
                 
-                // Очищаем поле ввода
-                errorInput.value = '';
+                // Очищаем форму
+                resetForm();
                 
             } catch (error) {
                 hideLoading();
                 showError('Ошибка отправки: ' + error.message);
             }
+        }
+
+        // Сброс формы
+        function resetForm() {
+            errorInput.value = '';
+            brandInput.value = '';
+            modelInput.value = '';
+            yearInput.value = '';
+            formData = {
+                errorCode: '',
+                carBrand: '',
+                carModel: '',
+                carYear: ''
+            };
+            currentStep = 1;
+            updateStepIndicator();
+            document.querySelectorAll('.form-step').forEach(step => step.classList.remove('active'));
+            document.getElementById('step1-content').classList.add('active');
+            carInfo.style.display = 'none';
         }
 
         // Функция установки кода ошибки из примера
@@ -502,8 +792,26 @@
             successMessage.style.display = 'none';
         }
 
-        // Обработка Enter в поле ввода
+        // Обработка Enter в полях ввода
         errorInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                nextStep();
+            }
+        });
+
+        brandInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                nextStep();
+            }
+        });
+
+        modelInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                nextStep();
+            }
+        });
+
+        yearInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 sendErrorCode();
             }
